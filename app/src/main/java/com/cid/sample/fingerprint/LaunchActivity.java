@@ -55,7 +55,7 @@ public class LaunchActivity
 				mDeviceType = this.determineDeviceType(mBiometricsManager.getProductName());
 				mDeviceFamily = this.determineDeviceFamily(mDeviceType);
 
-				// Lunch camera activity to perform face detection.
+				// Lunch main activity.
 				Intent intent = new Intent(this, FingerprintActivity.class);
 				startActivity(intent);
 			} else Toast.makeText(this, "Biometrics FAILED to initialize.", LENGTH_LONG).show();
