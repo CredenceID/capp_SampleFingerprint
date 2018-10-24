@@ -18,6 +18,8 @@ import com.credenceid.biometrics.Biometrics.OnFingerprintGrabbedListener;
 import com.credenceid.biometrics.Biometrics.OnFingerprintGrabbedWSQListener;
 import com.credenceid.biometrics.Biometrics.ResultCode;
 
+import java.util.Arrays;
+
 import static com.cid.sample.fingerprint.LaunchActivity.mBiometricsManager;
 import static com.credenceid.biometrics.Biometrics.FmdFormat.ISO_19794_2_2005;
 import static com.credenceid.biometrics.Biometrics.ResultCode.FAIL;
@@ -186,6 +188,8 @@ public class FingerprintActivity
 			mCaptureFingerprintOne = false;
 		});
 
+		// Inside onClickListeners for each button, we disable all buttons until their respective
+		// operation is complete. Once it is done, the appropriate buttons are re-enabled.
 		mOpenCloseButton.setOnClickListener((View v) -> {
 			// Disable button so user does not try a second open while fingerprint it opening.
 			// Hide capture/math buttons since sensor is opening/closing.
@@ -197,8 +201,7 @@ public class FingerprintActivity
 		});
 
 		mCaptureButton.setOnClickListener((View v) -> {
-			mOpenCloseButton.setEnabled(false);
-			mCaptureButton.setEnabled(false);
+			this.setAllButtonEnable(false);
 			mInfoTextView.setText("");
 
 			if (mCaptureFingerprintOne)
@@ -208,7 +211,6 @@ public class FingerprintActivity
 
 		mMatchButton.setOnClickListener((View v) -> {
 			this.setAllButtonEnable(false);
-
 			this.matchFMDTemplates(mFingerprintOneFMDTemplate, mFingerprintTwoFMDTemplate);
 		});
 	}
@@ -271,13 +273,15 @@ public class FingerprintActivity
 
 				// This ResultCode is returned once fingerprint has been fully captured.
 				if (resultCode == OK) {
+					mStatusTextView.setText("WSQ File: " + wsqFilepath);
 					mInfoTextView.setText("Quality: " + nfiqScore);
 					mCaptureButton.setEnabled(true);
 					mOpenCloseButton.setEnabled(true);
-
+					// Create template from fingerprint image.
 					createFMDTemplate(bitmap);
 				}
 
+				// This ResultCode is returned is fingerprint capture fails.
 				if (resultCode == FAIL) {
 					mOpenCloseButton.setEnabled(true);
 					mCaptureButton.setEnabled(true);
@@ -287,7 +291,7 @@ public class FingerprintActivity
 			@Override
 			public void onCloseFingerprintReader(ResultCode resultCode,
 												 CloseReasonCode closeReasonCode) {
-
+				// This case is already handled by "mFingerprintOpenCloseListener".
 			}
 		});
 	}
@@ -323,10 +327,11 @@ public class FingerprintActivity
 				if (resultCode == OK) {
 					mCaptureButton.setEnabled(true);
 					mOpenCloseButton.setEnabled(true);
-
+					// Create template from fingerprint image.
 					createFMDTemplate(bitmap);
 				}
 
+				// This ResultCode is returned is fingerprint capture fails.
 				if (resultCode == FAIL) {
 					mOpenCloseButton.setEnabled(true);
 					mCaptureButton.setEnabled(true);
@@ -336,7 +341,7 @@ public class FingerprintActivity
 			@Override
 			public void onCloseFingerprintReader(ResultCode resultCode,
 												 CloseReasonCode closeReasonCode) {
-
+				// This case is already handled by "mFingerprintOpenCloseListener".
 			}
 		});
 	}
@@ -353,13 +358,15 @@ public class FingerprintActivity
 				return;
 			}
 
+			// Display how long it took for FMD template to be created.
 			final double durationInSeconds = (SystemClock.elapsedRealtime() - startTime) / 1000.0;
 			mInfoTextView.setText("Created FMD template in: " + durationInSeconds + " seconds.");
 
 			if (mCaptureFingerprintOne)
-				mFingerprintOneFMDTemplate = bytes.clone();
-			else mFingerprintTwoFMDTemplate = bytes.clone();
+				mFingerprintOneFMDTemplate = Arrays.copyOf(bytes, bytes.length);
+			else mFingerprintTwoFMDTemplate = Arrays.copyOf(bytes, bytes.length);
 
+			// If both templates have been created then enable Match button.
 			if (mFingerprintOneFMDTemplate != null && mFingerprintTwoFMDTemplate != null)
 				mMatchButton.setEnabled(true);
 		});
@@ -371,6 +378,7 @@ public class FingerprintActivity
 					  byte[] templateTwo) {
 		mBiometricsManager.compareFmd(templateOne, templateTwo, ISO_19794_2_2005,
 				(ResultCode resultCode, float dissimilarity) -> {
+					// Re-enable all buttons since operation is now complete.
 					this.setAllButtonEnable(true);
 
 					if (resultCode != OK) {
