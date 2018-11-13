@@ -7,13 +7,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.cid.sample.fingerprint.models.DeviceFamily;
+import com.cid.sample.fingerprint.models.DeviceType;
 import com.credenceid.biometrics.Biometrics;
 import com.credenceid.biometrics.BiometricsManager;
 
 import static android.widget.Toast.LENGTH_LONG;
 import static android.widget.Toast.LENGTH_SHORT;
-import static com.cid.sample.fingerprint.DeviceType.CTAB_V4;
-import static com.cid.sample.fingerprint.DeviceType.CTWO_V2;
+import static com.cid.sample.fingerprint.models.DeviceType.CTAB_V4;
+import static com.cid.sample.fingerprint.models.DeviceType.CTWO_V2;
 import static com.credenceid.biometrics.Biometrics.ResultCode.OK;
 
 public class LaunchActivity

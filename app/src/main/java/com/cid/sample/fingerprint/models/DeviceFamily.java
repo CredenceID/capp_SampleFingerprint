@@ -1,4 +1,4 @@
-package com.cid.sample.fingerprint;
+package com.cid.sample.fingerprint.models;
 
 /* Used to identify which family of Credence device's this application is running on. */
 @SuppressWarnings("SpellCheckingInspection")
