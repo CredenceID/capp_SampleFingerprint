@@ -1,7 +1,9 @@
 package com.cid.sample.fingerprint;
 
+/* Used to identify which specific Credence device this application is running on. */
+@SuppressWarnings("SpellCheckingInspection")
 public enum DeviceType {
-	INVALID,
+	CID_PRODUCT,
 	TWIZZLER,
 	TRIDENT_1,
 	TRIDENT_2,
