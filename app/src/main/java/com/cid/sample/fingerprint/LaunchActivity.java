@@ -124,6 +124,7 @@ public class LaunchActivity
 
 				/* Launch main activity. */
 				Intent intent = new Intent(this, FingerprintActivity.class);
+				intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 				startActivity(intent);
 			} else Toast.makeText(this, "Biometrics FAILED to initialize.", LENGTH_LONG).show();
 		});
