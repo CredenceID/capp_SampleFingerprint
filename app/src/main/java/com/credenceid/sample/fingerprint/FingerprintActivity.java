@@ -1,4 +1,4 @@
-package com.cid.sample.fingerprint;
+package com.credenceid.sample.fingerprint;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
