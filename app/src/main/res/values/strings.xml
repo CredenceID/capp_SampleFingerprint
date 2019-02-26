@@ -1,6 +1,9 @@
 <resources>
 	<string name="app_name">SampleFingerprint</string>
 
+	<string name="biometrics_initialized">Biometrics initialized.</string>
+	<string name="biometrics_fail_init">Biometrics FAILED to initialize.</string>
+
 	<string name="open">Open</string>
 	<string name="close">Close</string>
 	<string name="capture">Capture</string>

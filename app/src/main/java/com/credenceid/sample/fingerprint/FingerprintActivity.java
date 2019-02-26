@@ -13,6 +13,7 @@ import android.widget.TextView;
 
 import com.credenceid.biometrics.Biometrics;
 import com.credenceid.biometrics.Biometrics.OnFingerprintGrabbedWSQListener;
+import com.credenceid.biometrics.Biometrics.ResultCode;
 import com.credenceid.biometrics.BiometricsManager;
 
 import java.util.Arrays;
@@ -22,12 +23,13 @@ import static com.credenceid.biometrics.Biometrics.ResultCode.FAIL;
 import static com.credenceid.biometrics.Biometrics.ResultCode.INTERMEDIATE;
 import static com.credenceid.biometrics.Biometrics.ResultCode.OK;
 
+@SuppressWarnings("StatementWithEmptyBody")
+@SuppressLint("StaticFieldLeak")
 public class FingerprintActivity
 		extends Activity {
 	private final static String TAG = FingerprintActivity.class.getSimpleName();
 
 	/* CredenceSDK biometrics object, used to interface with APIs. */
-	@SuppressLint("StaticFieldLeak")
 	private static BiometricsManager mBiometricsManager;
 
 	/* List of different fingerprint scan types supported across all Credence devices. */
@@ -39,8 +41,11 @@ public class FingerprintActivity
 			Biometrics.ScanType.TWO_FINGERS_SPLIT
 	};
 
-	/*
+	/* --------------------------------------------------------------------------------------------
+	 *
 	 * Components in layout file.
+	 *
+	 * --------------------------------------------------------------------------------------------
 	 */
 	private ImageView mFingerprintOneImageView;
 	private ImageView mFingerprintTwoImageView;
@@ -62,36 +67,49 @@ public class FingerprintActivity
 	private byte[] mFingerprintOneFMDTemplate = null;
 	private byte[] mFingerprintTwoFMDTemplate = null;
 
+	/* --------------------------------------------------------------------------------------------
+	 *
+	 * Callbacks.
+	 *
+	 * --------------------------------------------------------------------------------------------
+	 */
+
 	/* Callback invoked every time fingerprint sensor on device opens or closes. */
 	private Biometrics.FingerprintReaderStatusListener mFingerprintOpenCloseListener =
 			new Biometrics.FingerprintReaderStatusListener() {
 				@Override
-				public void onOpenFingerprintReader(Biometrics.ResultCode resultCode,
+				public void onOpenFingerprintReader(ResultCode resultCode,
 													String hint) {
-					Log.d(TAG, "onOpenFingerprintReader(): " + resultCode.name());
 
-					/* If hint is valid, display it. */
+					/* If hint is valid, display it. Regardless of ResultCode we should
+					 * message indicating what is going on with sensor.
+					 */
 					if (hint != null && !hint.isEmpty())
 						mStatusTextView.setText(hint);
 
-					/* This code is returned while sensor is in middle of opening.
-					 * Allow user to open sensor if it failed to open.
-					 * Allow user to close sensor if it successfully opened.
-					 */
-					if (resultCode != INTERMEDIATE)
-						mOpenCloseButton.setEnabled(true);
-
-					if (resultCode == Biometrics.ResultCode.OK) {
+					/* This code is returned once sensor has fully finished opening. */
+					if (OK == resultCode) {
 						/* Now that sensor is open, if user presses "mOpenCloseButton" fingerprint
 						 * sensor should now close. To achieve this we change flag which controls
 						 * what action mOpenCloseButton takes.
 						 */
 						mOpenFingerprint = false;
 
+						/* Operation is complete, re-enable button. */
+						mOpenCloseButton.setEnabled(true);
 						/* Only if fingerprint opened do we allow user to capture fingerprints. */
 						mCaptureButton.setEnabled(true);
 						/* If fingerprint opened then we change button to say "Close". */
 						mOpenCloseButton.setText(getString(R.string.close));
+					}
+					/* This code is returned while sensor is in the middle of opening. */
+					else if (INTERMEDIATE == resultCode) {
+						/* Do nothing while operation is still on-going. */
+					}
+					/* This code is returned if fingerprint sensor fails to open. */
+					else if (FAIL == resultCode) {
+						/* Operation is complete, re-enable button. */
+						mOpenCloseButton.setEnabled(true);
 					}
 				}
 
@@ -117,8 +135,16 @@ public class FingerprintActivity
 				}
 			};
 
+	/* --------------------------------------------------------------------------------------------
+	 *
+	 * Android activity lifecycle event methods.
+	 *
+	 * --------------------------------------------------------------------------------------------
+	 */
+
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	protected void
+	onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_fingerprint);
 		Log.d(TAG, "onCreate(Bundle)");
@@ -131,7 +157,8 @@ public class FingerprintActivity
 
 	/* Invoked when user pressed back menu button. */
 	@Override
-	public void onBackPressed() {
+	public void
+	onBackPressed() {
 		super.onBackPressed();
 
 		/* If back button is pressed when we want to destroy activity. */
@@ -140,7 +167,8 @@ public class FingerprintActivity
 
 	/* Invoked when application is killed, either by user or system. */
 	@Override
-	protected void onDestroy() {
+	protected void
+	onDestroy() {
 		super.onDestroy();
 
 		/* Tell biometrics to cancel current on-going capture. */
@@ -365,8 +393,9 @@ public class FingerprintActivity
 		/* Keep a track of how long it takes for FMD creation. */
 		final long startTime = SystemClock.elapsedRealtime();
 
-		mBiometricsManager.convertToFmd(bitmap, ISO_19794_2_2005, (Biometrics.ResultCode resultCode,
+		mBiometricsManager.convertToFMD(bitmap, ISO_19794_2_2005, (Biometrics.ResultCode resultCode,
 																   byte[] bytes) -> {
+
 			if (resultCode != OK) {
 				mStatusTextView.setText("Failed to create FMD template.");
 				return;
@@ -395,29 +424,30 @@ public class FingerprintActivity
 	private void
 	matchFMDTemplates(byte[] templateOne,
 					  byte[] templateTwo) {
+
 		/* Normally one would handle parameter checking, but this API handles it for us. Meaning
 		 * that if any FMD is invalid it will return the proper score of 0, etc.
 		 */
+		mBiometricsManager.compareFMD(templateOne, templateTwo, ISO_19794_2_2005,
+				(ResultCode resultCode, float dissimilarity) -> {
 
-		mBiometricsManager.compareFmd(templateOne, templateTwo, ISO_19794_2_2005,
-				(Biometrics.ResultCode resultCode, float dissimilarity) -> {
 					/* Re-enable all components since operation is now complete. */
 					this.setAllComponentEnable(true);
 
-					if (resultCode != OK) {
+					/* This API will never return ResultCode.INTERMEDIATE. */
+
+					if (FAIL == resultCode) {
 						mStatusTextView.setText("Failed to compare templates.");
 						mInfoTextView.setText("");
-						return;
+					} else if (OK == resultCode) {
+						String matchDecision = "No Match";
+						/* This is how to properly determine a match or not. */
+						if (dissimilarity < (Integer.MAX_VALUE / 1000000))
+							matchDecision = "Match";
+
+						mStatusTextView.setText("Matching complete.");
+						mInfoTextView.setText("Match outcome: " + matchDecision);
 					}
-					/* Code reaches here if templates were matched and a score calculated. */
-
-					String matchDecision = "No Match";
-					/* This is how to properly determine a match or not. */
-					if (dissimilarity < (Integer.MAX_VALUE / 1000000))
-						matchDecision = "Match";
-
-					mStatusTextView.setText("Matching complete.");
-					mInfoTextView.setText("Match outcome: " + matchDecision);
 				});
 	}
 }
