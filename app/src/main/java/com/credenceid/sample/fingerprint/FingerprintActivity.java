@@ -28,9 +28,6 @@ import static com.credenceid.biometrics.Biometrics.ResultCode.OK;
 public class FingerprintActivity
         extends Activity {
 
-    /* CredenceSDK biometrics object, used to interface with APIs. */
-    private static BiometricsManager mBiometricsManager;
-
     /* List of different fingerprint scan types supported across all Credence devices. */
     private final Biometrics.ScanType mScanTypes[] = {
             Biometrics.ScanType.SINGLE_FINGER,
@@ -58,8 +55,8 @@ public class FingerprintActivity
      * If false, then "mOpenClose" button text is "Close" meaning we need to close fingerprint.
      */
     private boolean mOpenFingerprint = true;
-    /* We are capturing two fingerprints. If true then capture saves data as first fingerprint; if
-     * false capture saves data as second fingerprint.
+    /* We are capturing two fingerprints. If true then saves data as first fingerprint; if false
+     * saves data as second fingerprint.
      */
     private boolean mCaptureFingerprintOne = true;
     /* Stores FMD templates (used for fingerprint matching) for each fingerprint. */
@@ -106,7 +103,7 @@ public class FingerprintActivity
                     else if (INTERMEDIATE == resultCode) {
                         /* Do nothing while operation is still on-going. */
                     }
-                    /* This code is returned if fingerprint sensor fails to open. */
+                    /* This code is returned if sensor fails to open. */
                     else if (FAIL == resultCode) {
                         /* Operation is complete, re-enable button. */
                         mOpenCloseButton.setEnabled(true);
@@ -137,8 +134,9 @@ public class FingerprintActivity
 
                     } else if (INTERMEDIATE == resultCode) {
                         /* This code is never returned here. */
+
                     } else if (FAIL == resultCode) {
-                        mStatusTextView.setText("Fingerprint FAILED to Closed.");
+                        mStatusTextView.setText("Fingerprint FAILED to close.");
                     }
                 }
             };
@@ -156,8 +154,6 @@ public class FingerprintActivity
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_fingerprint);
-
-        mBiometricsManager = LaunchActivity.getBiometricsManager();
 
         this.initializeLayoutComponents();
         this.configureLayoutComponents();
@@ -181,14 +177,14 @@ public class FingerprintActivity
         super.onDestroy();
 
         /* Tell biometrics to cancel current on-going capture. */
-        mBiometricsManager.cancelCapture();
+        App.BioManager.cancelCapture();
         /* Close all open peripherals. */
-        mBiometricsManager.closeFingerprintReader();
+        App.BioManager.closeFingerprintReader();
 
         /* If user presses back button then they are exiting application. If this is the case then
          * tell C-Service to unbind from this application.
          */
-        mBiometricsManager.finalizeBiometrics(false);
+        App.BioManager.finalizeBiometrics(false);
     }
 
     /* --------------------------------------------------------------------------------------------
@@ -249,8 +245,8 @@ public class FingerprintActivity
             this.setAllComponentEnable(false);
 
             if (mOpenFingerprint)
-                mBiometricsManager.openFingerprintReader(mFingerprintOpenCloseListener);
-            else mBiometricsManager.closeFingerprintReader();
+                App.BioManager.openFingerprintReader(mFingerprintOpenCloseListener);
+            else App.BioManager.closeFingerprintReader();
         });
 
         mCaptureButton.setOnClickListener((View v) -> {
@@ -314,7 +310,7 @@ public class FingerprintActivity
          * template, fingerprint quality score, along with captured fingerprint image. This saves
          * from having to make separate API calls.
          */
-        mBiometricsManager.grabFingerprint(mScanTypes[0], new OnFingerprintGrabbedWSQListener() {
+        App.BioManager.grabFingerprint(mScanTypes[0], new OnFingerprintGrabbedWSQListener() {
             @SuppressLint("SetTextI18n")
             @Override
             public void
@@ -377,7 +373,7 @@ public class FingerprintActivity
 
         mFingerprintTwoFMDTemplate = null;
 
-        mBiometricsManager.grabFingerprint(mScanTypes[0], new Biometrics.OnFingerprintGrabbedListener() {
+        App.BioManager.grabFingerprint(mScanTypes[0], new Biometrics.OnFingerprintGrabbedListener() {
             @Override
             public void
             onFingerprintGrabbed(ResultCode resultCode,
@@ -438,7 +434,7 @@ public class FingerprintActivity
         /* Keep a track of how long it takes for FMD creation. */
         final long startTime = SystemClock.elapsedRealtime();
 
-        mBiometricsManager.convertToFMD(bitmap, ISO_19794_2_2005, (ResultCode resultCode,
+        App.BioManager.convertToFMD(bitmap, ISO_19794_2_2005, (ResultCode resultCode,
                                                                    byte[] bytes) -> {
 
             if (OK == resultCode) {
@@ -478,7 +474,7 @@ public class FingerprintActivity
         /* Normally one would handle parameter checking, but this API handles it for us. Meaning
          * that if any FMD is invalid it will return the proper score of 0, etc.
          */
-        mBiometricsManager.compareFMD(templateOne, templateTwo, ISO_19794_2_2005,
+        App.BioManager.compareFMD(templateOne, templateTwo, ISO_19794_2_2005,
                 (ResultCode resultCode, float dissimilarity) -> {
 
                     if (OK == resultCode) {
