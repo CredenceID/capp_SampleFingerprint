@@ -165,8 +165,7 @@ public class FingerprintActivity
     onBackPressed() {
 
         super.onBackPressed();
-        /* If back button is pressed when we want to destroy activity. */
-        this.onDestroy();
+        this.finish();
     }
 
     /* Invoked when application is killed, either by user or system. */
@@ -180,11 +179,6 @@ public class FingerprintActivity
         App.BioManager.cancelCapture();
         /* Close all open peripherals. */
         App.BioManager.closeFingerprintReader();
-
-        /* If user presses back button then they are exiting application. If this is the case then
-         * tell C-Service to unbind from this application.
-         */
-        App.BioManager.finalizeBiometrics(false);
     }
 
     /* --------------------------------------------------------------------------------------------
