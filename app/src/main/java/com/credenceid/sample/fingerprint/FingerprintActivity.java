@@ -14,7 +14,6 @@ import com.credenceid.biometrics.Biometrics;
 import com.credenceid.biometrics.Biometrics.CloseReasonCode;
 import com.credenceid.biometrics.Biometrics.OnFingerprintGrabbedWSQListener;
 import com.credenceid.biometrics.Biometrics.ResultCode;
-import com.credenceid.biometrics.BiometricsManager;
 
 import java.util.Arrays;
 
@@ -29,7 +28,7 @@ public class FingerprintActivity
         extends Activity {
 
     /* List of different fingerprint scan types supported across all Credence devices. */
-    private final Biometrics.ScanType mScanTypes[] = {
+    private final Biometrics.ScanType[] mScanTypes = {
             Biometrics.ScanType.SINGLE_FINGER,
             /* These three scan types are only supported on Trident family of devices. */
             Biometrics.ScanType.TWO_FINGERS,
@@ -429,7 +428,7 @@ public class FingerprintActivity
         final long startTime = SystemClock.elapsedRealtime();
 
         App.BioManager.convertToFMD(bitmap, ISO_19794_2_2005, (ResultCode resultCode,
-                                                                   byte[] bytes) -> {
+                                                               byte[] bytes) -> {
 
             if (OK == resultCode) {
                 /* Display how long it took for FMD template to be created. */
