@@ -10,10 +10,15 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.credenceid.HexUtils;
 import com.credenceid.biometrics.Biometrics;
 import com.credenceid.biometrics.Biometrics.CloseReasonCode;
 import com.credenceid.biometrics.Biometrics.OnFingerprintGrabbedWSQListener;
 import com.credenceid.biometrics.Biometrics.ResultCode;
+import com.credenceid.biometrics.CCFToFMDSyncResponse;
+import com.credenceid.biometrics.CompareFMDSyncResponse;
+import com.credenceid.biometrics.ConvertToFMDSyncResponse;
+import com.credenceid.biometrics.FMDToCCFSyncResponse;
 
 import java.util.Arrays;
 
@@ -26,6 +31,8 @@ import static com.credenceid.biometrics.Biometrics.ResultCode.OK;
 @SuppressLint("StaticFieldLeak")
 public class FingerprintActivity
         extends Activity {
+
+    private static final int SYNC_API_TIMEOUT_MS = 3000;
 
     /* List of different fingerprint scan types supported across all Credence devices. */
     private final Biometrics.ScanType[] mScanTypes = {
@@ -132,7 +139,7 @@ public class FingerprintActivity
                         mMatchButton.setEnabled(false);
 
                     } else if (INTERMEDIATE == resultCode) {
-                        /* This code is never returned here. */
+                        /* This code is never returned for this API. */
 
                     } else if (FAIL == resultCode) {
                         mStatusTextView.setText("Fingerprint FAILED to close.");
@@ -444,7 +451,7 @@ public class FingerprintActivity
                     mMatchButton.setEnabled(true);
 
             } else if (INTERMEDIATE == resultCode) {
-                /* This code is never returned here. */
+                /* This code is never returned for this API. */
 
             } else if (FAIL == resultCode) {
                 mStatusTextView.setText("Failed to create FMD template.");
@@ -490,5 +497,161 @@ public class FingerprintActivity
                     /* Re-enable all components since operation is now complete. */
                     this.setAllComponentEnable(true);
                 });
+    }
+
+    /* --------------------------------------------------------------------------------------------
+     *
+     * Methods demonstrating how to use Credence ID other fingerprint APIs. This methods are not
+     * used in this application, as they are only here for usage reference.
+     *
+     * --------------------------------------------------------------------------------------------
+     */
+
+    @SuppressWarnings("unused")
+    private byte[]
+    convertWSQToFMDSync(byte[] WSQ) {
+
+        ConvertToFMDSyncResponse res = App.BioManager.convertToFMDSync(WSQ,
+                ISO_19794_2_2005,
+                SYNC_API_TIMEOUT_MS);
+
+        if (null != res && OK == res.resultCode)
+            return res.FMD;
+        return new byte[]{};
+    }
+
+    @SuppressWarnings("unused")
+    private byte[]
+    convertFMDToCCFSync(byte[] FMD) {
+
+        FMDToCCFSyncResponse res = App.BioManager.convertFMDToCCFSync(FMD, SYNC_API_TIMEOUT_MS);
+        if (null != res && OK == res.resultCode)
+            return res.CCF;
+        return new byte[]{};
+    }
+
+    @SuppressWarnings("unused")
+    private byte[]
+    convertCCFToFMDSync(byte[] CCF) {
+
+        /* Arguments to this API assume a fingerprint capture was made using Credence ID SDK and
+         * device. Once a capture was made one of Credence's 'convertToFMD' methods was using to
+         * obtain this CCF template. If so, then please use following values for CCF to FMD.
+         */
+        CCFToFMDSyncResponse res = App.BioManager.convertCCFToFMDSync(CCF,
+                (short) 400,
+                (short) 500,
+                (short) 100,
+                (short) 100,
+                SYNC_API_TIMEOUT_MS);
+
+        if (null != res && OK == res.resultCode)
+            return res.FMD;
+        return new byte[]{};
+    }
+
+    @SuppressWarnings("unused")
+    private int
+    compareFMDSync(byte[] FMDOne,
+                   byte[] FMDTwo) {
+
+        CompareFMDSyncResponse res = App.BioManager.compareFMDSync(FMDOne,
+                FMDTwo,
+                ISO_19794_2_2005,
+                SYNC_API_TIMEOUT_MS);
+        /* Score may be multiplied by 100 to obtain a percentage in range [0, 100]. */
+        return (null == res) ? 0 : (int) (res.dissimilarity * 100);
+    }
+
+    @SuppressWarnings("unused")
+    private byte[]
+    convertToFMDSync(Bitmap fingerprintImage) {
+
+        ConvertToFMDSyncResponse res = App.BioManager.convertToFMDSync(fingerprintImage,
+                Biometrics.FMDFormat.ISO_19794_2_2005,
+                SYNC_API_TIMEOUT_MS);
+
+        if (null != res && OK == res.resultCode)
+            return res.FMD;
+        return new byte[]{};
+    }
+
+    @SuppressWarnings("unused")
+    private void
+    grabFingerprint() {
+
+        App.BioManager.grabFingerprint(Biometrics.ScanType.SINGLE_FINGER,
+                false,
+                new Biometrics.OnMultiFingerprintGrabbedListener() {
+                    @SuppressLint("SetTextI18n")
+                    @Override
+                    public void
+                    onFingerprintGrabbed(ResultCode resultCode,
+                                         Bitmap bitmap,
+                                         Bitmap[] bitmaps,
+                                         String filePath,
+                                         String[] strings,
+                                         String hint) {
+
+                        /* If a valid hint was given then display it for user to see. */
+                        if (hint != null && !hint.isEmpty())
+                            mStatusTextView.setText(hint);
+
+                        /* This code is returned once sensor captures fingerprint image. */
+                        if (OK == resultCode) {
+                            if (null != bitmap)
+                                mFingerprintOneImageView.setImageBitmap(bitmap);
+
+                            mStatusTextView.setText("File: " + filePath);
+
+                            /* Create template from fingerprint image. */
+                            createFMDTemplate(bitmap);
+                        }
+                        /* This code is returned on every new frame/image from sensor. */
+                        else if (INTERMEDIATE == resultCode) {
+                            /* On every frame, if image preview is available, show it to user. */
+                            if (null != bitmap)
+                                mFingerprintOneImageView.setImageBitmap(bitmap);
+
+                            /* This hint is returned if cancelCapture()" or "closeFingerprint()" are called
+                             * while in middle of capture.
+                             */
+                            if (hint != null && hint.equals("Capture Stopped"))
+                                setAllComponentEnable(true);
+                        }
+                        /* This code is returned if sensor fails to capture fingerprint image. */
+                        else if (FAIL == resultCode) {
+                            setAllComponentEnable(true);
+                        }
+                    }
+
+                    @Override
+                    public void
+                    onCloseFingerprintReader(ResultCode resultCode,
+                                             CloseReasonCode closeReasonCode) {
+
+                        /* This case is already handled by "mFingerprintOpenCloseListener". */
+                    }
+                });
+    }
+
+    @SuppressWarnings("unused")
+    @SuppressLint("SetTextI18n")
+    private void
+    decompressWSQ(byte[] WSQ) {
+
+        App.BioManager.decompressWSQ(WSQ, (resultCode, bytes) -> {
+
+            if (OK == resultCode) {
+                mStatusTextView.setText("WSQ Decompression: SUCCESS");
+                mInfoTextView.setText("Data: " + HexUtils.toString(bytes));
+
+            } else if (INTERMEDIATE == resultCode) {
+                /* This code is never returned for this API. */
+
+            } else if (FAIL == resultCode) {
+                mStatusTextView.setText("WSQ Decompression: FAIL");
+            }
+        });
     }
 }
