@@ -11,20 +11,8 @@ android {
 		archivesBaseName = "C-Finger"
 	}
 
-	signingConfigs {
-		debug {
-		}
-		release {
-			keyAlias 'platform'
-			keyPassword 'credenceid'
-			storeFile file('../../CredenceKeys/platform.jks')
-			storePassword 'credenceid'
-		}
-	}
-
 	buildTypes {
 		release {
-			signingConfig signingConfigs.release
 			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
 			minifyEnabled true
 		}
