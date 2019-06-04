@@ -11,10 +11,29 @@ android {
 		archivesBaseName = "C-Finger"
 	}
 
-	buildTypes {
+	signingConfigs {
+		debug {
+		}
 		release {
-			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-			minifyEnabled true
+			keyAlias 'CredenceIDPublicKey'
+			keyPassword 'CredenceID'
+			storeFile file('../../CredencePublicKeys/PublicKey.jks')
+			storePassword 'CredenceID'
+		}
+	}
+
+	buildTypes {
+		debug {
+			minifyEnabled false
+		}
+		release {
+			minifyEnabled false
+			debuggable false
+			jniDebuggable false
+			renderscriptDebuggable false
+			zipAlignEnabled true
+			signingConfig signingConfigs.release
+			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
 		}
 	}
 
