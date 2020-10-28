@@ -5,6 +5,7 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.SystemClock
+import android.widget.Toast
 import com.credenceid.biometrics.Biometrics.*
 import com.credenceid.biometrics.Biometrics.FMDFormat.ISO_19794_2_2005
 import com.credenceid.biometrics.Biometrics.ResultCode.*
@@ -195,8 +196,12 @@ class FingerprintActivity : Activity() {
         }
 
         matchBtn.setOnClickListener {
-            this.setAllComponentEnable(false)
-            this.matchFMDTemplates(mFingerprintOneFMDTemplate, mFingerprintTwoFMDTemplate)
+            if(mFingerprintOneFMDTemplate!=null && mFingerprintTwoFMDTemplate!=null) {
+                this.setAllComponentEnable(false)
+                this.matchFMDTemplates(mFingerprintOneFMDTemplate, mFingerprintTwoFMDTemplate)
+            }else{
+                Toast.makeText(this,"Please capture both fingerprints to match.", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -209,6 +214,9 @@ class FingerprintActivity : Activity() {
 
         captureBtn.isEnabled = enable
         matchBtn.isEnabled = enable
+
+        /* If both templates have been created then enable Match button. */
+        matchBtn.isEnabled = mFingerprintOneFMDTemplate != null && mFingerprintTwoFMDTemplate != null
     }
 
     /**
